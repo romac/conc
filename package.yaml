@@ -1,0 +1,27 @@
+
+name: conc
+version: '0.1.0.0'
+category: Data Structures
+author: Romain Ruetschi
+maintainer: romain.ruetschi@gmail.com
+copyright: 2017 Romain Ruetschi
+license: BSD3
+github: romac/conc
+synopsis: Conc-Tree lists and ropes
+description: |
+  An implementation of Conc-Tree lists and ropes, for use in parallel programs, as described in
+  .
+  Prokopec A., Odersky M. (2016) Conc-Trees for Functional and Parallel Programming. In: Shen X., Mueller F., Tuck J. (eds) Languages and Compilers for Parallel Computing. LCPC 2015. Lecture Notes in Computer Science, vol 9519. Springer, Cham
+  .
+  Please see the README for more information.
+
+extra-source-files:
+  - README.md
+  - LICENSE
+
+dependencies:
+  - base >=4.7 && <5
+
+library:
+  source-dirs: src
+
