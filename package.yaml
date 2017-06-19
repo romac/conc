@@ -21,6 +21,14 @@ extra-source-files:
 
 dependencies:
   - base >=4.7 && <5
+  - deepseq
+  - vector
+  - primitive
+
+ghc-options:
+  - -Wall
+  - -fno-warn-unused-top-binds 
+  - -fno-warn-name-shadowing
 
 library:
   source-dirs: src
