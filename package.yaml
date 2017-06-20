@@ -32,4 +32,7 @@ ghc-options:
 
 library:
   source-dirs: src
+  exposed-modules:
+    - Conc.Tree
+    - Conc.Tree.Buffer
 

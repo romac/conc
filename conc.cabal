@@ -35,6 +35,10 @@ library
   ghc-options: -Wall -fno-warn-unused-top-binds -fno-warn-name-shadowing
   exposed-modules:
       Conc.Tree
+      Conc.Tree.Buffer
+  other-modules:
+      Conc.Tree.Internal
+      Paths_conc
   build-depends:
       base >=4.7 && <5
     , deepseq
