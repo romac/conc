@@ -8,12 +8,7 @@ copyright: 2017 Romain Ruetschi
 license: BSD3
 github: romac/conc
 synopsis: Conc-Tree lists and ropes
-description: |
-  An implementation of Conc-Tree lists and ropes, for use in parallel programs, as described in
-  .
-  Prokopec A., Odersky M. (2016) Conc-Trees for Functional and Parallel Programming. In: Shen X., Mueller F., Tuck J. (eds) Languages and Compilers for Parallel Computing. LCPC 2015. Lecture Notes in Computer Science, vol 9519. Springer, Cham
-  .
-  Please see the README for more information.
+description: See README at <https://github.com/sol/hpack#readme> 
 
 extra-source-files:
   - README.md
@@ -28,6 +23,7 @@ dependencies:
 ghc-options:
   - -Wall
   - -fno-warn-unused-top-binds 
+  - -fno-warn-unused-matches
   - -fno-warn-name-shadowing
 
 library:
@@ -35,4 +31,15 @@ library:
   exposed-modules:
     - Conc.Tree
     - Conc.Tree.Buffer
+
+tests:
+  spec:
+    cpp-options: -DTEST
+    main: Spec.hs
+    source-dirs:
+      - test
+      - src
+    dependencies:
+      - hspec == 2.*
+      - QuickCheck
 

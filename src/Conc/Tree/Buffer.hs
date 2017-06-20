@@ -57,5 +57,8 @@ expand ConcBuffer{..} = do
   -- No need to reset _buffer, as it is going to be overwritten
 
 toConc :: PrimMonad m => ConcBuffer (PrimState m) a -> m (Conc a)
-toConc buf = expand buf >> readMutVar (_conc buf)
+toConc buf = do
+  expand buf
+  conc <- readMutVar (_conc buf)
+  pure $ normalize conc
 

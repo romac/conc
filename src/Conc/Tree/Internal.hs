@@ -5,6 +5,8 @@
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DeriveTraversable  #-}
+{-# LANGUAGE TypeFamilies  #-}
+{-# LANGUAGE MultiWayIf  #-}
 
 module Conc.Tree.Internal
   ( Conc(..)
@@ -20,6 +22,7 @@ module Conc.Tree.Internal
   , append
   , appendLeaf
   , concat
+  , normalize
   ) where
 
 import           Prelude         hiding (concat, lookup, null)
@@ -134,10 +137,10 @@ append' xs@(Append ls rs) ys =
   let zs = rs :<>: ys
    in case ls of
         ws@(Append _ _) -> append' ws zs
-        ws              | level ws <= level xs -> append' ws zs
+        ws              | level ws <= level xs -> ws <> zs
         ws              | otherwise -> Append ws zs
 
-append' _ _ = error "internal error: append' expects an Append"
+append' _ _ = error "append': famous last words: this should never happen"
 
 -- | /O(log(n)/. Concatenate two Conc-Trees.
 concat :: Conc a -> Conc a -> Conc a
@@ -147,7 +150,44 @@ concat xs ys    = normalize xs `conc` normalize ys
 {-# INLINABLE concat #-}
 
 conc :: Conc a -> Conc a -> Conc a
-conc = undefined
+conc xs@(xls :<>: xrs) ys@(yls :<>: yrs) =
+  if | balanced    -> xs :<>: ys
+     | leftLeaning -> concLeftLeaning  xs ys
+     | otherwise   -> concRightLeaning xs ys
+  where
+    diff = level ys - level xs
+    balanced = abs diff <= 1
+    leftLeaning = diff < -1
+
+conc _ _ = error "famous last words: this should never happen"
+
+concLeftLeaning :: Conc a -> Conc a -> Conc a
+concLeftLeaning (xls :<>: xrs) ys@(_ :<>: _) | level xls >= level xrs =
+  xls :<>: (xrs <> ys) -- TODO: check fixity and precedence of :<>:
+
+concLeftLeaning xs@(xls :<>: xrs) ys@(yls :<>: yrs) | otherwise =
+  if level nrr == level xs - 3
+     then xls :<>: (xrls :<>: nrr)
+     else (xls :<>: xrls) :<>: nrr
+  where
+    nrr = xrrs <> ys
+    (xrls :<>: xrrs) = xrs
+
+concLeftLeaning _ _ = error "famous last words: this should never happen"
+
+concRightLeaning :: Conc a -> Conc a -> Conc a
+concRightLeaning xs@(xls :<>: xrs) ys@(yls :<>: yrs) | level yrs >= level yls =
+  (xs :<>: yls) :<>: yrs
+
+concRightLeaning xs@(xls :<>: xrs) ys@(yls :<>: yrs) | otherwise =
+  if level nll == level ys - 3
+     then (nll :<>: ylrs) :<>: yrs
+     else nll :<>: (ylrs :<>: yrs)
+  where
+    nll = xs <> ylls
+    (ylls :<>: ylrs) = yls
+
+concRightLeaning _ _ = error "famous last words: this should never happen"
 
 normalize :: Conc a -> Conc a
 normalize (Append ls rs) = wrap ls rs

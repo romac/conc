@@ -5,11 +5,7 @@
 name:                conc
 version:             0.1.0.0
 synopsis:            Conc-Tree lists and ropes
-description:         An implementation of Conc-Tree lists and ropes, for use in parallel programs, as described in
-                     .
-                     Prokopec A., Odersky M. (2016) Conc-Trees for Functional and Parallel Programming. In: Shen X., Mueller F., Tuck J. (eds) Languages and Compilers for Parallel Computing. LCPC 2015. Lecture Notes in Computer Science, vol 9519. Springer, Cham
-                     .
-                     Please see the README for more information.
+description:         See README at <https://github.com/sol/hpack#readme>
 homepage:            https://github.com/romac/conc#readme
 bug-reports:         https://github.com/romac/conc/issues
 license:             BSD3
@@ -32,7 +28,7 @@ source-repository head
 library
   hs-source-dirs:
       src
-  ghc-options: -Wall -fno-warn-unused-top-binds -fno-warn-name-shadowing
+  ghc-options: -Wall -fno-warn-unused-top-binds -fno-warn-unused-matches -fno-warn-name-shadowing
   exposed-modules:
       Conc.Tree
       Conc.Tree.Buffer
@@ -44,4 +40,26 @@ library
     , deepseq
     , vector
     , primitive
+  default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+      src
+  ghc-options: -Wall -fno-warn-unused-top-binds -fno-warn-unused-matches -fno-warn-name-shadowing
+  cpp-options: -DTEST
+  build-depends:
+      base >=4.7 && <5
+    , deepseq
+    , vector
+    , primitive
+    , hspec == 2.*
+    , QuickCheck
+  other-modules:
+      ConcSpec
+      Conc.Tree
+      Conc.Tree.Buffer
+      Conc.Tree.Internal
   default-language: Haskell2010
