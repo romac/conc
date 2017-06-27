@@ -53,7 +53,7 @@ data Conc a
 
 data Leaf a
   = Single a
-  | Chunk (V.Vector a) Int Int
+  | Chunk !(V.Vector a) !Int !Int
   deriving
     ( Eq, Ord, Show, Read
     , Functor, Foldable, Traversable
@@ -82,13 +82,13 @@ null Empty = True
 null _     = False
 {-# INLINE null #-}
 
--- | /O(log(n)/. The number of levels in this Conc-Tree.
+-- | /O(log(n))/. The number of levels in this Conc-Tree.
 level :: Conc a -> Int
 level (ls :<>: rs)   = 1 + level ls `max` level rs
 level (Append ls rs) = 1 + level ls `max` level rs
 level _              = 0
 
--- | /O(log(n)/. The number of elements in this Conc-Tree.
+-- | /O(log(n))/. The number of elements in this Conc-Tree.
 size :: Conc a -> Int
 size (ls :<>: rs)         = size ls + size rs
 size (Append ls rs)       = size ls + size rs
@@ -96,7 +96,7 @@ size (Leaf (Chunk _ n _)) = n
 size (Leaf (Single _))    = 1
 size Empty                = 0
 
--- | /O(log(n)/. Lookup an element at a specified index.
+-- | /O(log(n))/. Lookup an element at a specified index.
 lookup :: Conc a -> Int -> Maybe a
 lookup _                     i | i < 0       = Nothing
 lookup (ls :<>: _)           i | i < size ls = lookup ls i
@@ -105,7 +105,7 @@ lookup (Leaf (Chunk xs n _)) i = onlyIf (i < n) $ xs V.! i
 lookup (Leaf (Single x))     0 = Just x
 lookup _                     _ = Nothing
 
--- | /O(log(n)/. Update an element at a specified index.
+-- | /O(log(n))/. Update an element at a specified index.
 update :: Conc a -> Int -> a -> Maybe (Conc a)
 update _                     i _ | i < 0       = Nothing
 update (ls :<>: rs)          i x | i < size ls = (:<>: rs) <$> update ls i x
@@ -114,11 +114,21 @@ update (Leaf (Single _))     _ x = Just (Leaf (Single x))
 update (Leaf (Chunk xs n k)) i x = onlyIf (i < n) $ Leaf (Chunk (V.unsafeUpd xs [(i, x)]) n k)
 update _                     _ _ = Nothing
 
--- TODO
+-- | /O(log(n))/. Insert an element at a specific position.
 insert :: Conc a -> Int -> a -> Conc a
-insert = undefined
+insert Empty                _ y                 = singleton y
+insert xs@(Leaf (Single x)) 0 y                 = singleton y :<>: xs
+insert xs@(Leaf (Single x)) i y                 = xs :<>: singleton y
+insert (Leaf chunk)         i y                 = chunkInsert chunk i y
+insert (left :<>: right)    i y | i < size left = concat (insert left i y) right
+insert (left :<>: right)    i y | otherwise     = concat left (insert right (i - size left) y)
 
--- | /O(1)/ (ephemeral). Add an element to the rs end of the Conc-Tree.
+-- FIXME: This is wrong
+chunkInsert :: Leaf a -> Int -> a -> Conc a
+chunkInsert (Chunk xs n k) 0 y = Leaf (Chunk (V.cons y xs) (n + 1) (k + 1))
+chunkInsert (Chunk xs n k) i y = let (ls, rs) = V.splitAt i xs in Leaf (Chunk ((V.snoc ls y) <> rs) (n + 1) (k + 1))
+
+-- | /O(1)/ (ephemeral). Add an element to the end of the Conc-Tree.
 append :: Conc a -> a -> Conc a
 append c x = appendLeaf c (Single x)
 
@@ -137,7 +147,7 @@ append' xs@(Append ls rs) ys =
   let zs = rs :<>: ys
    in case ls of
         ws@(Append _ _) -> append' ws zs
-        ws              | level ws <= level xs -> ws <> zs
+        ws              | level ws <= level xs -> concat ws zs
         ws              | otherwise -> Append ws zs
 
 append' _ _ = error "append': famous last words: this should never happen"
@@ -163,14 +173,14 @@ conc _ _ = error "famous last words: this should never happen"
 
 concLeftLeaning :: Conc a -> Conc a -> Conc a
 concLeftLeaning (xls :<>: xrs) ys@(_ :<>: _) | level xls >= level xrs =
-  xls :<>: (xrs <> ys) -- TODO: check fixity and precedence of :<>:
+  xls :<>: (concat xrs ys) -- TODO: check fixity and precedence of :<>:
 
 concLeftLeaning xs@(xls :<>: xrs) ys@(yls :<>: yrs) | otherwise =
   if level nrr == level xs - 3
      then xls :<>: (xrls :<>: nrr)
      else (xls :<>: xrls) :<>: nrr
   where
-    nrr = xrrs <> ys
+    nrr = concat xrrs ys
     (xrls :<>: xrrs) = xrs
 
 concLeftLeaning _ _ = error "famous last words: this should never happen"
@@ -184,7 +194,7 @@ concRightLeaning xs@(xls :<>: xrs) ys@(yls :<>: yrs) | otherwise =
      then (nll :<>: ylrs) :<>: yrs
      else nll :<>: (ylrs :<>: yrs)
   where
-    nll = xs <> ylls
+    nll = xs :<>: ylls
     (ylls :<>: ylrs) = yls
 
 concRightLeaning _ _ = error "famous last words: this should never happen"
@@ -195,8 +205,8 @@ normalize xs             = xs
 {-# INLINE normalize #-}
 
 wrap :: Conc a -> Conc a -> Conc a
-wrap (Append ws zs) ys = wrap ws (zs <> ys)
-wrap xs ys             = xs <> ys
+wrap (Append ws zs) ys = wrap ws (concat zs ys)
+wrap xs ys             = concat xs ys
 {-# INLINABLE wrap #-}
 
 onlyIf :: Bool -> a -> Maybe a
