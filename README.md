@@ -13,4 +13,3 @@ A Haskell implementation of Conc-Tree lists and ropes, for use in parallel progr
 # Author
 
 Romain Ruetschi
-
